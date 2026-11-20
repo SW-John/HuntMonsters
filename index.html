@@ -3040,7 +3040,7 @@ function updateGacha(dt) {
       } else { GA.result = it; GA.revealT = 0; GA.total[itb(it).id]++;
       GA.isNew = addOwned(itb(it), it) === 1; saveGA(); sfx.reveal(it.r); }
       if ((it.art === 'excal' || it.art === 'katana' || it.art === 'tspear' || it.art === 'shadow' || it.art === 'dgun' || it.art === 'boom' || it.art === 'wsword' || it.art === 'esword') && !EQ.key) setEquip(itb(it).id + ':' + it.id);
-      if (it.art === 'excal' || it.art === 'katana' || it.art === 'tspear' || it.art === 'shadow' || it.art === 'dgun' || it.art === 'boom' || it.art === 'wsword' || it.art === 'esword') startPullFx(it);
+      if (it.art === 'excal' || it.art === 'katana' || it.art === 'tspear' || it.art === 'shadow' || it.art === 'dgun' || it.art === 'boom' || it.art === 'wsword' || it.art === 'esword' || it.comp || it.dstone) startPullFx(it);
     }
   }
   if (GA.result) GA.revealT += dt; if (GA.multiShow) GA.multiT = (GA.multiT || 0) + dt; else GA.multiT = 0;
@@ -4216,6 +4216,8 @@ function petals(x, y, w, h, n, alpha) {   // 떨어지는 벚꽃잎 (도트)
 }
 /* ------------------------------------------------ 전설 뽑기 연출 (벚월도 · 엑스칼리버) */
 const PFX = {
+  comp: { name: '거짓의 완성체', sub: '거짓이 완성되었다', spr: 'compItem', px: 200, dim: 'rgba(10,4,26,', flash: 'rgba(230,215,255,', ray: 'rgba(150,110,255,', ring: '#b79bff', pal: ['#ffffff', '#e6dcff', '#b79bff', '#8e6bff', '#ff7ad0'], title: '#c8b0ff' },
+  dstone: { name: '붉은 용 봉인 해제석', sub: '용의 봉인이 풀린다', spr: 'sealStone', px: 200, dim: 'rgba(36,6,2,', flash: 'rgba(255,225,190,', ray: 'rgba(255,110,50,', ring: '#ff8a3a', pal: ['#ffffff', '#fff3a8', '#ffd24a', '#ff9a22', '#ff5a1a'], title: '#ff9a4a' },
   esword: { name: '대지의 대검', sub: '대지를 품은 대검', art: 'esword', sc: 1.5, dim: 'rgba(18,10,2,', flash: 'rgba(255,230,160,', ray: 'rgba(255,190,80,', ring: '#ffd36a', pal: ['#fff0b0', '#ffd36a', '#e8a83a', '#8ad060', '#c88a3a'], title: '#ffd36a' },
   wsword: { name: '파도 검', sub: '파도를 가르는 검', art: 'wsword', sc: 1.9, dim: 'rgba(2,12,28,', flash: 'rgba(210,240,255,', ray: 'rgba(110,200,255,', ring: '#8fd8ff', pal: ['#ffffff', '#dff6ff', '#8fd8ff', '#4fa8f0', '#bfe6ff'], title: '#8fd8ff' },
   boom: { name: '태풍의 부메랑', sub: '폭풍을 부른 날개', art: 'boom', sc: 3.6, dim: 'rgba(4,12,32,', flash: 'rgba(220,240,255,', ray: 'rgba(120,190,255,', ring: '#8fd0ff', pal: ['#ffffff', '#dff2ff', '#8fd0ff', '#5aa0e0', '#ffe36a'], title: '#8fd0ff' },
@@ -4226,7 +4228,7 @@ const PFX = {
   excal:  { name: '전설의 고대 엑스칼리버', sub: '고대의 성검', art: 'excal', sc: 6, dim: 'rgba(30,22,4,', flash: 'rgba(255,248,200,', ray: 'rgba(255,226,120,', ring: '#ffe36a', pal: ['#ffffff', '#fff3a8', '#ffe36a', '#ffd24a', '#ffb02e'], title: '#ffe36a' }
 };
 function startPullFx(it) {
-  const kind = it.art, parts = [];
+  const kind = it.dstone ? 'dstone' : it.comp ? 'comp' : it.art, parts = [];
   for (let i = 0; i < 150; i++) parts.push({ a: rnd(0, Math.PI * 2), v: rnd(140, 560), ph: rnd(0, 6.3), sz: Math.random() < 0.3 ? 8 : 4, c: Math.floor(rnd(1, 5)), d: rnd(0.15, 0.5), rain: false });
   for (let i = 0; i < 90; i++) parts.push({ x: rnd(0, W), ph: rnd(0, 6.3), sz: Math.random() < 0.3 ? 8 : 4, c: Math.floor(rnd(1, 5)), d: rnd(0.4, 2.6), sp: rnd(70, 150), rain: true });
   GA.fx = { kind, t: 0, dur: 4.6, parts, isNew: GA.isNew };
@@ -4255,9 +4257,10 @@ function drawPullFx() {
   for (let k = 0; k < 3; k++) { const rr = (u - 0.1 - k * 0.28) * 620; if (rr <= 0) continue; ctx.globalAlpha = clamp(1 - rr / 640, 0, 1) * fadeOut; ctx.strokeStyle = th.ring; ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2); ctx.stroke(); }
   ctx.globalAlpha = 1;
   // 무기
-  const im = IMG[th.art];
+  const im = IMG[th.art] || SPR[th.spr];
   if (im) {
-    const e = clamp((u - 0.15) / 0.55, 0, 1), sc = th.sc * (0.2 + 0.8 * (1 - Math.pow(1 - e, 3))), bob = Math.sin(u * 3) * 6;
+    ctx.imageSmoothingEnabled = !th.spr;
+    const e = clamp((u - 0.15) / 0.55, 0, 1), sc = (th.px ? th.px / Math.max(im.width, im.height) : th.sc) * (0.2 + 0.8 * (1 - Math.pow(1 - e, 3))), bob = Math.sin(u * 3) * 6;
     ctx.globalAlpha = clamp(e * 1.6, 0, 1) * fadeOut; ctx.translate(cx, cy + bob); ctx.rotate(f.kind === 'katana' ? 0.5 + Math.sin(u * 2) * 0.05 : Math.sin(u * 2) * 0.04);
     ctx.drawImage(im, Math.round(-im.width * sc / 2), Math.round(-im.height * sc / 2), Math.round(im.width * sc), Math.round(im.height * sc)); ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1;
